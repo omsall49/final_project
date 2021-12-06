@@ -21,7 +21,7 @@ mongoose.connect(mongoURL, {
     console.log(err)
 })
 
-
+//json처리
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
@@ -114,7 +114,7 @@ app.get('/player/:name', async (req, res) => {
 })
 
 
-
+//서버 포트 연결
 app.listen(port, () => {
     console.log(`listening at port: ${port}...`);
 })

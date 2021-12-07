@@ -7,6 +7,7 @@ const crypto = require('crypto')
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const { encryptPassword, setAuth } = require("./utils");
+const fs = require('fs')
 const { User, Player } = require('./models');
 dotenv.config()
 
@@ -115,27 +116,44 @@ app.get('/player/:name', setAuth, async (req, res) => {
 
 
 
-//맵이동 ()
-app.post('player/move/:name', setAuth, async (req, res) => {
+//맵이동 (아이템획득시 스탯 업데이트, 도망가기)
+app.post('/player/move/:name', setAuth, async (req, res) => {
     try {
-        
-    } catch (error) {
-        
-    }
-})
-
-
-//레벨업
-app.get('/player/levelup/:name', setAuth, async (req, res) => {
-    try {
+        var x = req.body.x
+        var y = req.body.y
         var name = req.params.name
         var player = await Player.findOne({ name })
+        x = x + player.x
+        y = y + player.y
+        //좌표 플레이어 상태에도 저장
+        var map
+        var mapFile =  fs.readFileSync('./data/map.json', 'utf8')
+        var mapData = JSON.parse(mapFile)
+        mapData.forEach(o => {
+            if(o.x === x && o.y === y) map = o
+        })
+        //battle은 선택사항이므로 뷰만 보여줌
+        if(map.type === 'battle') {
+            //전투 세팅 로직
+        } else if(map.type === 'item') {
+            //아이템 획득 로직(경험치 획득 로직)
+        } else {
+            //아무일도 없었다 로직 (경험치 획득)
+        }
+        res.status(200).json({ msg: "move" })
     } catch (error) {
-
+        res.status(400).json({ error: "DB_ERROR" })
     }
 })
 
-//사망 (모든 스탯을 초기화 하는지 아니면 맵 위치만 초기화 하는지?)
+
+//전투 or 도망
+
+
+//레벨업 (1업 마다 능력치 모두 1상승)
+
+
+//사망 (게임 처음부터 시작)
 app.get('/player/death/:name', setAuth, async (req, res) => {
     try {
         var name = req.params.name
@@ -144,7 +162,7 @@ app.get('/player/death/:name', setAuth, async (req, res) => {
         player.exp = 0
         player.maxHP = 10
         player.HP = 10
-        player.str = 
+        player.str =
         player.def = 5
         player.x = 0
         player.y = 0

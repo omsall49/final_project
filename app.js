@@ -21,7 +21,7 @@ mongoose.connect(mongoURL, {
     console.log(err)
 })
 
-
+//json처리
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
@@ -53,7 +53,7 @@ app.post('/register',
         res.status(200).json({ _id: user._id });
     })
 
-    
+
 //로그인
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
@@ -94,27 +94,63 @@ app.post('/player/create', setAuth, async (req, res) => {
     }
 })
 
-
 //플레이어 정보 확인
-app.get('/player/:name', async (req, res) => {
+app.get('/player/:name', setAuth, async (req, res) => {
     try {
         var name = req.params.name
         var player = await Player.findOne({ name })
         var level = player.level
+        var exp = player.exp
         var maxHP = player.maxHP
         var HP = player.HP
         var str = player.str
         var def = player.def
         var x = player.x
         var y = player.y
-        res.status(200).json({ level, maxHP, HP, str, def, x, y })
+        res.status(200).json({ level, exp, maxHP, HP, str, def, x, y })
+    } catch (error) {
+        res.status(400).json({ error: "DB_ERROR" })
+    }
+})
+
+//전투
+
+//아이템 획득
+
+//맵이동
+
+//레벨업
+app.get('/player/levelup/:name', setAuth, async (req, res) => {
+    try {
+        var name = req.params.name
+        var player = await Player.findOne({ name })
+    } catch (error) {
+
+    }
+})
+
+//사망
+app.get('/player/death/:name', setAuth, async (req, res) => {
+    try {
+        var name = req.params.name
+        var player = await Player.findOne({ name })
+        player.level = 1
+        player.exp = 0
+        player.maxHP = 10
+        player.HP = 10
+        player.str = 
+        player.def = 5
+        player.x = 0
+        player.y = 0
+        await player.save()
+        res.status(200).json({ msg: "death" })
     } catch (error) {
         res.status(400).json({ error: "DB_ERROR" })
     }
 })
 
 
-
+//서버 포트 연결
 app.listen(port, () => {
     console.log(`listening at port: ${port}...`);
 })

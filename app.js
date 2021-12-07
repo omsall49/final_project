@@ -113,11 +113,17 @@ app.get('/player/:name', setAuth, async (req, res) => {
     }
 })
 
-//전투
 
-//아이템 획득
 
-//맵이동
+//맵이동 ()
+app.post('player/move/:name', setAuth, async (req, res) => {
+    try {
+        
+    } catch (error) {
+        
+    }
+})
+
 
 //레벨업
 app.get('/player/levelup/:name', setAuth, async (req, res) => {
@@ -129,7 +135,7 @@ app.get('/player/levelup/:name', setAuth, async (req, res) => {
     }
 })
 
-//사망
+//사망 (모든 스탯을 초기화 하는지 아니면 맵 위치만 초기화 하는지?)
 app.get('/player/death/:name', setAuth, async (req, res) => {
     try {
         var name = req.params.name

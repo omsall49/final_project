@@ -46,11 +46,12 @@ app.use("/static", express.static(path.join(__dirname, 'public')));
 
 
 //플레이어 선택, 생성 화면
-app.get('/', (req, res) => {
+app.get('/', async (req, res) => {
     var sess = req.session
-    console.log(sess)
     if (sess.key) {
-        res.render("home", { key: sess.key })
+        var email = sess.email
+        var players = await Player.find().where({ email })
+        res.render("home", { data: { players } })
     } else {
         res.redirect('/login')
     }
@@ -59,10 +60,6 @@ app.get('/', (req, res) => {
 
 //회원가입
 app.post('/register', async (req, res) => {
-    const errors = validationResult(req);
-    // if (!errors.isEmpty()) {
-    //     return res.status(400).json({ error: errors.array() });
-    // }
     const { email, password } = req.body;
     const encryptedPassword = encryptPassword(password);
     let user = null;
@@ -93,6 +90,7 @@ app.post('/login', async (req, res) => {
     await user.save();
     var sess = req.session
     sess.key = user.key
+    sess.email = user.email
     res.status(200).json({ key: user.key });
 })
 
@@ -100,9 +98,9 @@ app.post('/login', async (req, res) => {
 //캐릭터 생성
 app.post('/player/create', setAuth, async (req, res) => {
     try {
-        const { name } = req.body
+        var name = req.body.name
         if (await Player.exists({ name })) {
-            res.status(400).json({ error: "Player is already exists" })
+            msg = "Player is already exists"
         } else {
             const player = new Player({
                 name,
@@ -114,14 +112,15 @@ app.post('/player/create', setAuth, async (req, res) => {
                 y: 0
             })
             await player.save()
-            res.status(200).json({ msg: "success" }) //임시 결과값
+            msg = "Success"
         }
+        res.status(200).json({ msg }) //임시 결과값
     } catch (error) {
         res.status(400).json({ error: "DB_ERROR" })
     }
 })
 
-//플레이어 정보 확인
+//플레이어 상태 확인
 app.get('/player/:name', setAuth, async (req, res) => {
     try {
         var name = req.params.name
@@ -140,37 +139,20 @@ app.get('/player/:name', setAuth, async (req, res) => {
     }
 })
 
+//맵 화면
+app.get('/player/map/:name', async (req, res) => {
+    var sess = req.session
+    if (sess.key) {
+        var name = req.params.name
+        var player = await Player.findOne({ name })
+        res.render("map", { data: { player } })
+    } else {
+        res.redirect('/login')
+    }
+})
 
 
 //맵이동 (아이템획득시 스탯 업데이트, 도망가기)
-app.post('/player/move/:name', setAuth, async (req, res) => {
-    try {
-        var x = req.body.x
-        var y = req.body.y
-        var name = req.params.name
-        var player = await Player.findOne({ name })
-        x = x + player.x
-        y = y + player.y
-        //좌표 플레이어 상태에도 저장
-        var map
-        var mapFile = fs.readFileSync('./data/map.json', 'utf8')
-        var mapData = JSON.parse(mapFile)
-        mapData.forEach(o => {
-            if (o.x === x && o.y === y) map = o
-        })
-        //battle은 선택사항이므로 뷰만 보여줌
-        if (map.type === 'battle') {
-            //전투 세팅 로직
-        } else if (map.type === 'item') {
-            //아이템 획득 로직(경험치 획득 로직)
-        } else {
-            //아무일도 없었다 로직 (경험치 획득)
-        }
-        res.status(200).json({ msg: "move" })
-    } catch (error) {
-        res.status(400).json({ error: "DB_ERROR" })
-    }
-})
 
 
 //전투 or 도망
@@ -188,8 +170,8 @@ app.get('/player/death/:name', setAuth, async (req, res) => {
         player.exp = 0
         player.maxHP = 10
         player.HP = 10
-        player.str =
-            player.def = 5
+        player.str = 5
+        player.def = 5
         player.x = 0
         player.y = 0
         await player.save()

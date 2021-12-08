@@ -1,7 +1,6 @@
 const express = require('express')
 const app = express()
 const port = 3000
-const { body, validationResult } = require('express-validator');
 const path = require('path')
 const crypto = require('crypto')
 const mongoose = require('mongoose');
@@ -9,6 +8,7 @@ const dotenv = require('dotenv');
 const { encryptPassword, setAuth } = require("./utils");
 const fs = require('fs')
 const { User, Player } = require('./models');
+const session = require('express-session')
 dotenv.config()
 
 //몽고 DB 연결
@@ -26,36 +26,61 @@ mongoose.connect(mongoURL, {
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+
+
+app.use(session({
+    secret: "FINAL_PROJECT",
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+        httpOnly: true,
+        secure: false,
+    },
+}));
+
+
 //뷰 엔진 (api 로그인,회원가입 기능 테스트 완료후 뷰 연결)
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.use("/static", express.static(path.join(__dirname, 'public')));
 
 
+//플레이어 선택, 생성 화면
+app.get('/', (req, res) => {
+    var sess = req.session
+    console.log(sess)
+    if (sess.key) {
+        res.render("home", { key: sess.key })
+    } else {
+        res.redirect('/login')
+    }
+})
+
+
 //회원가입
-app.post('/register',
-    body('email').isEmail().isLength({ max: 100 }),
-    body('password').isLength({ min: 8, max: 16 }),
-    async (req, res) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
+app.post('/register', async (req, res) => {
+    const errors = validationResult(req);
+    // if (!errors.isEmpty()) {
+    //     return res.status(400).json({ error: errors.array() });
+    // }
+    const { email, password } = req.body;
+    const encryptedPassword = encryptPassword(password);
+    let user = null;
+    try {
+        user = new User({ email: email, password: encryptedPassword });
+        await user.save();
+    } catch (err) {
+        return res.status(400).json({ error: 'email is duplicated' });
+    }
+    res.status(200).json({ _id: user._id });
+})
 
-        const { email, password } = req.body;
-        const encryptedPassword = encryptPassword(password);
-        let user = null;
-        try {
-            user = new User({ email: email, password: encryptedPassword });
-            await user.save();
-        } catch (err) {
-            return res.send({ error: 'email is duplicated' }).status(400);
-        }
-        res.status(200).json({ _id: user._id });
-    })
+//로그인 페이지
+app.get('/login', (req, res) => {
+    res.render('login')
+})
 
-
-//로그인
+//로그인 로직
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
     const encryptedPassword = encryptPassword(password);
@@ -66,7 +91,8 @@ app.post('/login', async (req, res) => {
 
     user.key = encryptPassword(crypto.randomBytes(20));
     await user.save();
-
+    var sess = req.session
+    sess.key = user.key
     res.status(200).json({ key: user.key });
 })
 
@@ -127,15 +153,15 @@ app.post('/player/move/:name', setAuth, async (req, res) => {
         y = y + player.y
         //좌표 플레이어 상태에도 저장
         var map
-        var mapFile =  fs.readFileSync('./data/map.json', 'utf8')
+        var mapFile = fs.readFileSync('./data/map.json', 'utf8')
         var mapData = JSON.parse(mapFile)
         mapData.forEach(o => {
-            if(o.x === x && o.y === y) map = o
+            if (o.x === x && o.y === y) map = o
         })
         //battle은 선택사항이므로 뷰만 보여줌
-        if(map.type === 'battle') {
+        if (map.type === 'battle') {
             //전투 세팅 로직
-        } else if(map.type === 'item') {
+        } else if (map.type === 'item') {
             //아이템 획득 로직(경험치 획득 로직)
         } else {
             //아무일도 없었다 로직 (경험치 획득)
@@ -163,7 +189,7 @@ app.get('/player/death/:name', setAuth, async (req, res) => {
         player.maxHP = 10
         player.HP = 10
         player.str =
-        player.def = 5
+            player.def = 5
         player.x = 0
         player.y = 0
         await player.save()

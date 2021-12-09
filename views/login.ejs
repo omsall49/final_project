@@ -15,10 +15,11 @@
         <div>
             <div class="login_title">Login</div>
             <div class="input_form">
-                <input type="text" id="email_i" value="" size="40" style="height: 30px;" placeholder="email"/>
+                <input type="text" id="email_i" value="" size="40" style="height: 30px;" placeholder="email" />
             </div>
             <div class="input_form">
-                <input type="password" id="password_i" value="" size="40" style="height: 30px;" placeholder="password" />
+                <input type="password" id="password_i" value="" size="40" style="height: 30px;"
+                    placeholder="password" />
             </div>
             <div class="button">
                 <div class="form_btn" onclick="login_submit()">로그인</div>
@@ -31,16 +32,19 @@
                 <div>
                     <div class="login_title">Regist</div>
                     <div class="input_form">
-                        <input type="text" id="email_j" value="" size="40" style="height: 30px;" placeholder="Eamil"/>
+                        <input type="text" id="email_j" value="" size="40" style="height: 30px;" placeholder="Eamil" />
                     </div>
                     <div class="input_form">
-                        <input type="password" id="password_j" value="" size="40" style="height: 30px;" placeholder="password" />
+                        <input type="password" id="password_j" value="" size="40" style="height: 30px;"
+                            placeholder="password" />
                     </div>
                     <div class="input_form">
-                        <input type="password" id="password_confirm_j" value="" size="40" style="height: 30px;" placeholder="Password Confirm" />
+                        <input type="password" id="password_confirm_j" value="" size="40" style="height: 30px;"
+                            placeholder="Password Confirm" />
                     </div>
                     <div style="text-align:center;margin-top:20px">
-                        <div class="form_btn" style="background: aquamarine;padding:10px 0" onclick="regist_submit()">회원가입</div>
+                        <div class="form_btn" style="background: aquamarine;padding:10px 0" onclick="regist_submit()">
+                            회원가입</div>
                     </div>
                 </div>
             </div>
@@ -58,7 +62,14 @@
                 var key = res.data.key
                 alert('로그인 성공!')
                 localStorage.setItem('key', key)
-                window.location.href = 'http://localhost:3000/'
+                window.location.href='/'
+                axios.get('/', {
+                    headers: { authorization: `Bearer ${key}` }
+                }).then(() => {
+                    res.r
+                }).catch(err => {
+                    console.log(err)
+                })
             }).catch(err => {
                 alert('이메일 또는 패스워드 불일치')
                 console.log(err)
@@ -76,13 +87,13 @@
             var email = document.getElementById('email_j').value
             var password = document.getElementById('password_j').value
             var passwordConfirm = document.getElementById('password_confirm_j').value
-            if(email == "") {
+            if (email == "") {
                 alert('이메일을 입력해주세요')
             } else {
-                if(password == "") {
+                if (password == "") {
                     alert("패스워드를 입력해주세요")
                 } else {
-                    if(password !== passwordConfirm) {
+                    if (password !== passwordConfirm) {
                         alert('비밀번호가 일치 하지 않습니다.')
                     } else {
                         axios.post('/register', {
@@ -101,4 +112,5 @@
         }
     </script>
 </body>
+
 </html>

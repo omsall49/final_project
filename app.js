@@ -8,7 +8,6 @@ const dotenv = require('dotenv');
 const { encryptPassword, setAuth } = require("./utils");
 const fs = require('fs')
 const { User, Player } = require('./models');
-const session = require('express-session')
 dotenv.config()
 
 //몽고 DB 연결
@@ -28,17 +27,6 @@ app.use(express.json());
 
 
 
-app.use(session({
-    secret: "FINAL_PROJECT",
-    resave: false,
-    saveUninitialized: true,
-    cookie: {
-        httpOnly: true,
-        secure: false,
-    },
-}));
-
-
 //뷰 엔진 (api 로그인,회원가입 기능 테스트 완료후 뷰 연결)
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -46,15 +34,11 @@ app.use("/static", express.static(path.join(__dirname, 'public')));
 
 
 //플레이어 선택, 생성 화면
-app.get('/', async (req, res) => {
-    var sess = req.session
-    if (sess.key) {
-        var email = sess.email
-        var players = await Player.find().where({ email })
-        res.render("home", { data: { players } })
-    } else {
-        res.redirect('/login')
-    }
+app.get('/', setAuth ,async (req, res) => {
+    console.log(req.user)
+    var email = req.user.email
+    var players = await Player.find().where({ email })
+    res.render("home", { data: { players } })
 })
 
 
@@ -88,9 +72,6 @@ app.post('/login', async (req, res) => {
 
     user.key = encryptPassword(crypto.randomBytes(20));
     await user.save();
-    var sess = req.session
-    sess.key = user.key
-    sess.email = user.email
     res.status(200).json({ key: user.key });
 })
 
@@ -99,6 +80,7 @@ app.post('/login', async (req, res) => {
 app.post('/player/create', setAuth, async (req, res) => {
     try {
         var name = req.body.name
+        var email = req.user.email
         if (await Player.exists({ name })) {
             msg = "Player is already exists"
         } else {
@@ -109,7 +91,8 @@ app.post('/player/create', setAuth, async (req, res) => {
                 str: 5,
                 def: 5,
                 x: 0,
-                y: 0
+                y: 0,
+                email
             })
             await player.save()
             msg = "Success"

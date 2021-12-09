@@ -10,7 +10,8 @@ const schema = new Schema({
     str: { type: Number, default: 5 }, //공격력
     def: { type: Number, default: 5 }, //방어력
     x: { type: Number, default: 0 }, //맵의 x좌표
-    y: { type: Number, default: 0 } //맵의 y좌표
+    y: { type: Number, default: 0 }, //맵의 y좌표,
+    email: String
 });
 
 schema.methods.incrementHP = function (val) {

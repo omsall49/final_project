@@ -78,13 +78,8 @@ app.post('/login', async (req, res) => {
 
     user.key = encryptPassword(crypto.randomBytes(20));
     let header_auth = `Bearer ${user.key}`;
-    res.cookie(
-        'authorization', header_auth, {
-            maxAge: 1000 * 60 * 30
-        });
-    res.cookie('email', email, {
-        maxAge: 1000 * 60 * 30
-    });
+    res.cookie('authorization', header_auth);
+    res.cookie('email', email);
     await user.save();
     res.status(200).json({ key: user.key });
 })

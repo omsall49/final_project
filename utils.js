@@ -6,7 +6,7 @@ const encryptPassword = (password) => {
 }
 
 const setAuth = async (req, res, next) => {
-    const authorization = req.headers.authorization;
+    const authorization = req.cookies.authorization;
     const [bearer, key] = authorization.split(' ');
     if (bearer !== 'Bearer') {
         return res.send({error: 'Wrong Authorization'}).status(400);

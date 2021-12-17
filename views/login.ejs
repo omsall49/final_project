@@ -62,11 +62,10 @@
                 var key = res.data.key
                 alert('로그인 성공!')
                 localStorage.setItem('key', key)
-                window.location.href='/'
-                axios.get('/', {
+                axios.get('/player', {
                     headers: { authorization: `Bearer ${key}` }
-                }).then(() => {
-                    res.r
+                }).then((res) => {
+                    window.location = '/player'
                 }).catch(err => {
                     console.log(err)
                 })

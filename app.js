@@ -5,6 +5,7 @@ const path = require('path')
 const crypto = require('crypto')
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const cookieParser = require('cookie-parser');
 const { encryptPassword, setAuth } = require("./utils");
 const fs = require('fs')
 const { User, Player } = require('./models');
@@ -24,6 +25,7 @@ mongoose.connect(mongoURL, {
 //json처리
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(cookieParser());
 
 
 
@@ -34,11 +36,15 @@ app.use("/static", express.static(path.join(__dirname, 'public')));
 
 
 //플레이어 선택, 생성 화면
-app.get('/', setAuth ,async (req, res) => {
-    console.log(req.user)
-    var email = req.user.email
-    var players = await Player.find().where({ email })
-    res.render("home", { data: { players } })
+app.get('/player', setAuth, async(req, res) => {
+    if (req.cookies.email != ''){
+        var email = req.cookies.email
+        var players = await Player.find().where({ email })
+        res.render("home", { data: { players } })
+    } else {
+        res.redirect(301, '/')
+    }
+    
 })
 
 
@@ -57,7 +63,7 @@ app.post('/register', async (req, res) => {
 })
 
 //로그인 페이지
-app.get('/login', (req, res) => {
+app.get('/', (req, res) => {
     res.render('login')
 })
 
@@ -71,6 +77,14 @@ app.post('/login', async (req, res) => {
         return res.status(403).json({ error: 'email or password is invaild' });
 
     user.key = encryptPassword(crypto.randomBytes(20));
+    let header_auth = `Bearer ${user.key}`;
+    res.cookie(
+        'authorization', header_auth, {
+            maxAge: 1000 * 60 * 30
+        });
+    res.cookie('email', email, {
+        maxAge: 1000 * 60 * 30
+    });
     await user.save();
     res.status(200).json({ key: user.key });
 })
@@ -80,7 +94,7 @@ app.post('/login', async (req, res) => {
 app.post('/player/create', setAuth, async (req, res) => {
     try {
         var name = req.body.name
-        var email = req.user.email
+        var email = req.cookies.email
         if (await Player.exists({ name })) {
             msg = "Player is already exists"
         } else {
@@ -124,13 +138,12 @@ app.get('/player/:name', setAuth, async (req, res) => {
 
 //맵 화면
 app.get('/player/map/:name', async (req, res) => {
-    var sess = req.session
-    if (sess.key) {
+    if (req.cookies.auth) {
         var name = req.params.name
         var player = await Player.findOne({ name })
         res.render("map", { data: { player } })
     } else {
-        res.redirect('/login')
+        res.redirect(301, '/')
     }
 })
 

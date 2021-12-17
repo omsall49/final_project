@@ -57,18 +57,16 @@
         }
         const create_player = () => {
             var name = document.getElementById('player_name').value
-            var key = localStorage.getItem('key')
             axios.post('/player/create',
                 {
                     name: name
-                },
-                {
-                    headers: {
-                        authorization: key
-                    }
                 }
-            ).then(() => {
-                location.reload()
+            ).then((res) => {
+                if (res.data.msg == "Player is already exists") {
+                    alert('이미 존재하는 이름입니다.')
+                } else {
+                    location.reload()
+                }
             }).catch(err => {
                 alert(err.response.data.error)
             })
